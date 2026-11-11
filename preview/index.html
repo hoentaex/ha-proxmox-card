@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Proxmox Card preview</title>
+    <style>
+      :root {
+        --primary-text-color: #212121; --secondary-text-color: #727272; --card-background-color: #fff;
+        --secondary-background-color: #f2f2f2; --divider-color: rgba(0,0,0,.12); --primary-color: #03a9f4;
+      }
+      body.dark {
+        --primary-text-color: #e1e1e1; --secondary-text-color: #9b9b9b; --card-background-color: #1c1c1c;
+        --secondary-background-color: #2a2a2a; --divider-color: rgba(255,255,255,.12); background: #111;
+      }
+      body { font-family: Roboto, system-ui, sans-serif; background: #fafafa; color: var(--primary-text-color); margin: 16px; }
+      .grid { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 360px); gap: 16px; align-items: start; }
+      @media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+      ha-card { display: block; background: var(--card-background-color); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+    </style>
+  </head>
+  <body>
+    <p><label><input type="checkbox" id="dark" /> Dark</label></p>
+    <div class="grid">
+      <div id="full"></div>
+      <div id="mini"></div>
+    </div>
+    <script type="module">
+      class HaCard extends HTMLElement {}
+      customElements.define("ha-card", HaCard);
+      await import(`../dist/proxmox-card.js?${Date.now()}`);
+      const { hass } = await import("./mock.js");
+      const params = new URLSearchParams(location.search);
+      if (params.has("dark")) document.body.classList.add("dark");
+      if (params.has("bare")) document.querySelector("p").remove();
+      const full = document.createElement("proxmox-card");
+      full.setConfig(JSON.parse(params.get("full") || "{}"));
+      full.hass = hass;
+      document.getElementById("full").append(full);
+      const mini = document.createElement("proxmox-mini-card");
+      mini.setConfig(JSON.parse(params.get("mini") || "{}"));
+      mini.hass = hass;
+      document.getElementById("mini").append(mini);
+      window.cards = { full, mini, hass };
+      document.getElementById("dark").addEventListener("change", (e) => document.body.classList.toggle("dark", e.target.checked));
+    </script>
+  </body>
+</html>
