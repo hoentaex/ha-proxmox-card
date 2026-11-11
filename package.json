@@ -1,0 +1,13 @@
+{
+  "name": "ha-proxmox-card",
+  "version": "0.1.0",
+  "description": "Lovelace cards for Home Assistant to monitor and control Proxmox VE nodes, VMs, LXC containers and storage.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/build.mjs && node --check dist/proxmox-card.js",
+    "test": "node --test test/*.test.mjs"
+  },
+  "license": "MIT"
+}
