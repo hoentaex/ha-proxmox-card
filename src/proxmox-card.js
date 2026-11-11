@@ -552,7 +552,7 @@ const BASE_STYLE = `
           background: color-mix(in srgb, var(--c, var(--px-ok)) 15%, transparent); color: var(--c, var(--px-ok)); }
   .bar { height: 4px; border-radius: 3px; background: var(--divider-color, rgba(127,127,127,.25)); overflow: hidden; }
   .bar > div { height: 100%; border-radius: 3px; background: var(--c, var(--px-accent)); transition: width .6s ease; }
-  .header { display: flex; align-items: center; gap: 10px; padding: 12px 12px 8px; }
+  .header { display: flex; align-items: center; gap: 12px; padding: 16px 16px 12px; }
   .logo { height: 40px; width: 40px; flex: none; border-radius: 50%; display: grid; place-items: center;
           color: var(--c, var(--px-ok)); background: color-mix(in srgb, var(--c, var(--px-ok)) 16%, transparent); }
   .logo .icon { width: 22px; height: 22px; fill: currentColor; }
@@ -1089,9 +1089,9 @@ class ProxmoxBase extends HTMLElement {
 // ---------------------------------------------------------------------------
 
 const FULL_STYLE = `
-  .content { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 20px; }
-  .section-title { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; text-transform: uppercase;
-                   letter-spacing: .04em; color: var(--secondary-text-color); margin-bottom: 6px; }
+  .content { padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 24px; }
+  .section-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; text-transform: uppercase;
+                   letter-spacing: .04em; color: var(--secondary-text-color); margin-bottom: 10px; }
   .section-title .icon { width: 16px; height: 16px; }
   .section-title .count { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 400; }
   .section-title.fold { cursor: pointer; user-select: none; }
@@ -1099,14 +1099,14 @@ const FULL_STYLE = `
   .section-title.closed { margin-bottom: 0; }
   .section-title.closed .chevron { transform: rotate(-90deg); }
   /* A node: its name line, then its CPU, RAM and disk rings. */
-  .nodes { display: flex; flex-direction: column; gap: 10px; }
-  .node { border-radius: 12px; padding: 10px 12px; background: var(--secondary-background-color, rgba(127,127,127,.06)); min-width: 0;
+  .nodes { display: flex; flex-direction: column; gap: 12px; }
+  .node { border-radius: 12px; padding: 14px 16px; background: var(--secondary-background-color, rgba(127,127,127,.06)); min-width: 0;
           display: flex; flex-direction: column; gap: 8px; }
   .node-head { display: flex; align-items: center; gap: 6px; min-width: 0; }
   .node-head .nname { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .node-head .tags { display: flex; gap: 4px; margin-left: auto; min-width: 0; flex-wrap: nowrap; overflow: hidden; }
   .node .detail { font-size: 12px; color: var(--secondary-text-color); line-height: 1.4; }
-  .gauges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .gauges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .gauge { display: flex; flex-direction: column; align-items: center; min-width: 0; position: relative; border-radius: 10px; overflow: hidden; }
   .gauge > :not(.spark) { position: relative; }
   .gauge .spark { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -1124,8 +1124,8 @@ const FULL_STYLE = `
     .gauge .val .icon { display: none; }
     .gauge .val b { font-size: 11px; }
   }
-  .counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); gap: 6px; }
-  .count-tile { display: flex; flex-direction: column; align-items: center; padding: 6px 4px; border-radius: 10px;
+  .counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); gap: 10px; }
+  .count-tile { display: flex; flex-direction: column; align-items: center; padding: 10px 6px; border-radius: 10px;
                 background: var(--secondary-background-color, rgba(127,127,127,.08)); min-width: 0; text-align: center; }
   .count-tile .top { display: flex; align-items: center; gap: 6px; }
   .count-tile .icon { color: var(--c, var(--secondary-text-color)); }
@@ -1136,9 +1136,9 @@ const FULL_STYLE = `
   .count-tile.bad { --c: var(--px-crit); }
   .count-tile.bad .v { color: var(--px-crit); }
   .list { display: flex; flex-direction: column; }
-  .group { font-size: 11px; font-weight: 500; color: var(--secondary-text-color); padding: 10px 0 2px; display: flex; align-items: center; gap: 6px; }
+  .group { font-size: 11px; font-weight: 500; color: var(--secondary-text-color); padding: 14px 0 4px; display: flex; align-items: center; gap: 6px; }
   .group .n { margin-left: auto; font-weight: 400; }
-  .item { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--divider-color, rgba(127,127,127,.15)); min-width: 0; position: relative; }
+  .item { display: flex; align-items: center; gap: 10px; padding: 12px 0; min-height: 36px; border-bottom: 1px solid var(--divider-color, rgba(127,127,127,.15)); min-width: 0; position: relative; }
   .item > :not(.spark) { position: relative; }
   .item > .spark { position: absolute; left: 0; bottom: 0; width: 100%; height: 50%; pointer-events: none; --c: var(--primary-color, #03a9f4); opacity: .7; }
   .item:last-child { border-bottom: none; }
@@ -1150,7 +1150,7 @@ const FULL_STYLE = `
   .item .ubar { width: 64px; flex: none; }
   .item .uval { font-size: 12px; min-width: 38px; text-align: right; flex: none; }
   @container (max-width: 299px) { .item .ubar { width: 36px; } }
-  .ct-tools { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .ct-tools { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
   .ct-search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 0 8px; height: 30px; box-sizing: border-box;
                border: 1px solid var(--divider-color, rgba(127,127,127,.25)); border-radius: 8px; color: var(--secondary-text-color); }
   .ct-search .icon { width: 16px; height: 16px; }
@@ -1470,7 +1470,7 @@ class ProxmoxCard extends ProxmoxBase {
 // ---------------------------------------------------------------------------
 
 const MINI_STYLE = `
-  .content { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .content { padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
   .nrow { display: grid; grid-template-columns: minmax(0, 92px) minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 10px; font-size: 13px; }
   .nrow .nname { display: flex; align-items: center; gap: 6px; min-width: 0; font-weight: 500; }
   .nrow .nname span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
