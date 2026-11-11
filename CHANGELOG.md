@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 (2026-11-11)
+
+- More room: one node per row with larger rings, the same spacing between sections as the Internet Box card, taller VM and container rows.
+
 ## 0.1.0 (2026-11-11)
 
 First version.

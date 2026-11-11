@@ -1089,7 +1089,7 @@ class ProxmoxBase extends HTMLElement {
 // ---------------------------------------------------------------------------
 
 const FULL_STYLE = `
-  .content { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 12px; }
+  .content { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 20px; }
   .section-title { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; text-transform: uppercase;
                    letter-spacing: .04em; color: var(--secondary-text-color); margin-bottom: 6px; }
   .section-title .icon { width: 16px; height: 16px; }
@@ -1099,9 +1099,9 @@ const FULL_STYLE = `
   .section-title.closed { margin-bottom: 0; }
   .section-title.closed .chevron { transform: rotate(-90deg); }
   /* A node: its name line, then its CPU, RAM and disk rings. */
-  .nodes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
-  .node { border-radius: 12px; padding: 8px; background: var(--secondary-background-color, rgba(127,127,127,.06)); min-width: 0;
-          display: flex; flex-direction: column; gap: 6px; }
+  .nodes { display: flex; flex-direction: column; gap: 10px; }
+  .node { border-radius: 12px; padding: 10px 12px; background: var(--secondary-background-color, rgba(127,127,127,.06)); min-width: 0;
+          display: flex; flex-direction: column; gap: 8px; }
   .node-head { display: flex; align-items: center; gap: 6px; min-width: 0; }
   .node-head .nname { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .node-head .tags { display: flex; gap: 4px; margin-left: auto; min-width: 0; flex-wrap: nowrap; overflow: hidden; }
@@ -1110,7 +1110,7 @@ const FULL_STYLE = `
   .gauge { display: flex; flex-direction: column; align-items: center; min-width: 0; position: relative; border-radius: 10px; overflow: hidden; }
   .gauge > :not(.spark) { position: relative; }
   .gauge .spark { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-  .gauge .gw { position: relative; width: min(56px, 100%); aspect-ratio: 1; }
+  .gauge .gw { position: relative; width: min(64px, 100%); aspect-ratio: 1; }
   .ring { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
   .ring circle { fill: none; stroke-width: 6; }
   .ring .track { stroke: var(--divider-color, rgba(127,127,127,.25)); }
@@ -1136,9 +1136,9 @@ const FULL_STYLE = `
   .count-tile.bad { --c: var(--px-crit); }
   .count-tile.bad .v { color: var(--px-crit); }
   .list { display: flex; flex-direction: column; }
-  .group { font-size: 11px; font-weight: 500; color: var(--secondary-text-color); padding: 6px 0 2px; display: flex; align-items: center; gap: 6px; }
+  .group { font-size: 11px; font-weight: 500; color: var(--secondary-text-color); padding: 10px 0 2px; display: flex; align-items: center; gap: 6px; }
   .group .n { margin-left: auto; font-weight: 400; }
-  .item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--divider-color, rgba(127,127,127,.15)); min-width: 0; position: relative; }
+  .item { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--divider-color, rgba(127,127,127,.15)); min-width: 0; position: relative; }
   .item > :not(.spark) { position: relative; }
   .item > .spark { position: absolute; left: 0; bottom: 0; width: 100%; height: 50%; pointer-events: none; --c: var(--primary-color, #03a9f4); opacity: .7; }
   .item:last-child { border-bottom: none; }
