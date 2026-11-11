@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4 (2026-11-11)
+
+- Updates no longer show the number of packages (hundreds of Debian packages): a node badge "Updates", or "PVE 9.2.26" when a new Proxmox VE version is pending, with the package count in its tooltip. The counter shows the nodes with updates, the mini card the new Proxmox VE version.
+
+## 0.1.3 (2026-11-11)
+
+- VMs, containers, storages and disks separated by a hairline, with more room per row, larger names and buttons (as in the Docker card).
+
 ## 0.1.2 (2026-11-11)
 
 - Spacing matching the native Home Assistant cards: 16 px card padding, more room between sections, larger section titles, roomier node panels, counters and VM / container rows.

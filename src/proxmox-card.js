@@ -62,8 +62,6 @@ const STRINGS = {
     vms_lc_one: "VM",
     lxcs_lc: "containers",
     lxcs_lc_one: "container",
-    updates_lc: "updates",
-    updates_lc_one: "update",
     nodes_lc: "nodes",
     nodes_lc_one: "node",
     online: "Online",
@@ -77,6 +75,7 @@ const STRINGS = {
     backup_running: "Backup",
     failed_tasks: "{n} failed tasks",
     update_available: "Updates available",
+    packages: "packages",
     smart_failed: "SMART",
     wearout: "Wearout {v}",
     pool: "Pool",
@@ -154,8 +153,6 @@ const STRINGS = {
     vms_lc_one: "VM",
     lxcs_lc: "Container",
     lxcs_lc_one: "Container",
-    updates_lc: "Updates",
-    updates_lc_one: "Update",
     nodes_lc: "Nodes",
     nodes_lc_one: "Node",
     online: "Online",
@@ -169,6 +166,7 @@ const STRINGS = {
     backup_running: "Backup",
     failed_tasks: "{n} fehlgeschlagene Tasks",
     update_available: "Updates verfügbar",
+    packages: "Pakete",
     smart_failed: "SMART",
     wearout: "Verschleiß {v}",
     pool: "Pool",
@@ -921,14 +919,33 @@ class ProxmoxBase extends HTMLElement {
     };
   }
 
-  // Package updates of a node: the count sensor (else 1 for the binary sensor on), and the entity to open.
+  // Updates of a node: whether any package update is pending (null when the node has no update entity), and the
+  // new Proxmox VE version when there is one. The package count (hundreds of Debian packages) is not shown: only
+  // in the tooltip. The update entity's latest version is "9.2.26-p92-d177" (pve-manager, then the Proxmox and
+  // other package counts); without it, pve-manager in the count sensor's package list.
   _nodeUpdates(n) {
     const e = n.entities;
-    const total = num(this._s(e.updates_total));
+    const total = this._s(e.updates_total);
     const avail = this._s(e["binary_sensor.update_avail"]);
     const upd = this._s(e["update.node_update"]);
-    const count = total ?? (avail?.state === "on" || upd?.state === "on" ? 1 : avail || upd ? 0 : null);
-    return { count, id: e["update.node_update"] ?? e.updates_total ?? e["binary_sensor.update_avail"] };
+    const id = e["update.node_update"] ?? e.updates_total ?? e["binary_sensor.update_avail"];
+    if (![total, avail, upd].some(known)) return { pending: null, pve: null, packages: null, id };
+    const packages = num(total);
+    const pending = packages > 0 || avail?.state === "on" || upd?.state === "on";
+    const installed = upd?.attributes?.installed_version || this._s(e.version)?.state;
+    let pve = String(upd?.attributes?.latest_version || "").split("-")[0] || null;
+    if (!pve) {
+      const list = total?.attributes?.updates_list;
+      const m = Array.isArray(list) && list.map((x) => /^pve-manager - (\S+)/.exec(String(x))).find(Boolean);
+      pve = m ? m[1] : null;
+    }
+    if (!pending || (pve && pve === installed)) pve = null;
+    return { pending, pve, packages, id };
+  }
+
+  // Tooltip of an update badge: the new Proxmox VE version and the number of packages.
+  _updTitle(u) {
+    return [u.pve ? `Proxmox VE ${u.pve}` : this._t("update_available"), u.packages ? `${u.packages} ${this._t("packages")}` : ""].filter(Boolean).join(" · ");
   }
 
   _guestProblem(g) {
@@ -1138,15 +1155,17 @@ const FULL_STYLE = `
   .list { display: flex; flex-direction: column; }
   .group { font-size: 11px; font-weight: 500; color: var(--secondary-text-color); padding: 14px 0 4px; display: flex; align-items: center; gap: 6px; }
   .group .n { margin-left: auto; font-weight: 400; }
-  .item { display: flex; align-items: center; gap: 10px; padding: 12px 0; min-height: 36px; border-bottom: 1px solid var(--divider-color, rgba(127,127,127,.15)); min-width: 0; position: relative; }
+  /* One row per guest, storage or disk, separated by a hairline drawn over its chart. */
+  .item { display: flex; align-items: center; gap: 12px; padding: 14px 0; min-height: 40px; min-width: 0; position: relative; }
+  .item::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--divider-color, rgba(127,127,127,.2)); }
   .item > :not(.spark) { position: relative; }
-  .item > .spark { position: absolute; left: 0; bottom: 0; width: 100%; height: 50%; pointer-events: none; --c: var(--primary-color, #03a9f4); opacity: .7; }
-  .item:last-child { border-bottom: none; }
-  .item .ticon { width: 18px; height: 18px; color: var(--c, var(--secondary-text-color)); }
+  .item > .spark { position: absolute; left: 0; bottom: 4px; width: 100%; height: 36%; pointer-events: none; --c: var(--primary-color, #03a9f4); opacity: .4; }
+  .item:last-child::after { display: none; }
+  .item .ticon { width: 20px; height: 20px; color: var(--c, var(--secondary-text-color)); }
   .item .main { flex: 1; min-width: 0; }
-  .item .title { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+  .item .title { font-size: 15px; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
   .item .title > span:first-child { overflow: hidden; text-overflow: ellipsis; }
-  .item .detail { font-size: 12px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item .detail { font-size: 13px; line-height: 1.4; margin-top: 2px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .item .ubar { width: 64px; flex: none; }
   .item .uval { font-size: 12px; min-width: 38px; text-align: right; flex: none; }
   @container (max-width: 299px) { .item .ubar { width: 36px; } }
@@ -1160,13 +1179,13 @@ const FULL_STYLE = `
   .ct-sort { flex: none; max-width: 45%; height: 30px; padding: 0 6px; font: inherit; font-size: 13px; border-radius: 8px; cursor: pointer;
              border: 1px solid var(--divider-color, rgba(127,127,127,.25)); background: transparent; color: var(--primary-text-color); }
   .ct-sort option { background: var(--card-background-color, #fff); color: var(--primary-text-color); }
-  .ctrl { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; border: none;
+  .ctrl { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; border: none;
           background: transparent; color: var(--secondary-text-color); cursor: pointer; flex: none; padding: 0; }
   .ctrl:hover:not(:disabled) { background: var(--secondary-background-color, rgba(127,127,127,.12)); }
   .ctrl:disabled { opacity: .4; cursor: default; }
   .ctrl.go { color: var(--px-ok); }
   .ctrl.danger { color: var(--px-crit); }
-  .ctrl .icon { width: 19px; height: 19px; }
+  .ctrl .icon { width: 22px; height: 22px; }
   .empty { font-size: 13px; color: var(--secondary-text-color); padding: 4px 0; }
 `;
 
@@ -1288,8 +1307,8 @@ class ProxmoxCard extends ProxmoxBase {
         failed > 0
           ? `<span class="tag alert crit clickable" role="button" tabindex="0" data-entity="${esc(e.failed_tasks_count)}" title="${esc(this._t("failed_tasks", { n: failed }))}">${svgIcon(ICONS.alert)}${failed}</span>`
           : "",
-        upd.count > 0
-          ? `<span class="tag upd clickable" role="button" tabindex="0" data-entity="${esc(upd.id)}" title="${esc(this._t("update_available"))}">${svgIcon(ICONS.update)}${esc(upd.count)}</span>`
+        upd.pending
+          ? `<span class="tag upd clickable" role="button" tabindex="0" data-entity="${esc(upd.id)}" title="${esc(this._updTitle(upd))}" aria-label="${esc(this._updTitle(upd))}">${svgIcon(ICONS.update)}${esc(upd.pve ? `PVE ${upd.pve}` : this._t("updates"))}</span>`
           : "",
       ].join("");
       const memLabel = u.used !== null && u.total ? `${this._t("memory")}<small>${esc(fmtBytesPair(u.used, u.total, loc))}</small>` : this._t("memory");
@@ -1313,8 +1332,9 @@ class ProxmoxCard extends ProxmoxBase {
 
   _counts(env) {
     const gc = this._guestCounts(env);
-    const updates = env.nodes.map((n) => this._nodeUpdates(n).count).filter((v) => v !== null);
-    const updSum = updates.reduce((a, b) => a + b, 0);
+    // Updates: the nodes with pending updates, out of the nodes that report them.
+    const updates = env.nodes.map((n) => this._nodeUpdates(n)).filter((u) => u.pending !== null);
+    const updNodes = updates.filter((u) => u.pending).length;
     const storageProblems = [...env.storages, ...env.zfs, ...env.disks].filter((it) => this._itemInfo(it).bad).length;
     const tile = (key, icon, label, value, cls = "", entity = "") =>
       `<div class="count-tile ${entity ? "clickable" : ""} ${cls}" ${entity ? `role="button" tabindex="0" data-entity="${esc(entity)}"` : ""} data-key="${key}"><div class="top">${svgIcon(icon)}<span class="v">${esc(value)}</span></div><div class="k">${esc(label)}</div></div>`;
@@ -1325,7 +1345,7 @@ class ProxmoxCard extends ProxmoxBase {
         ? tile("storage", ICONS.storage, this._t("storage"), env.storages.length + env.zfs.length, storageProblems ? "bad" : "")
         : "",
       updates.length
-        ? tile("updates", ICONS.update, this._t("updates"), updSum, updSum > 0 ? "hot" : "", env.nodes.length === 1 ? this._nodeUpdates(env.nodes[0]).id : "")
+        ? tile("updates", ICONS.update, this._t("updates"), `${updNodes}/${updates.length}`, updNodes ? "hot" : "", env.nodes.length === 1 ? updates[0].id : "")
         : "",
     ].filter(Boolean);
     return tiles.length ? `<div class="counts">${tiles.join("")}</div>` : "";
@@ -1586,10 +1606,11 @@ class ProxmoxMiniCard extends ProxmoxCard {
         [...env.storages, ...env.zfs, ...env.disks].filter((it) => this._itemInfo(it).bad).length +
         env.nodes.filter((n) => this._nodeProblem(n)).length;
       if (problems) foot.push(`<span class="bad">${svgIcon(ICONS.alert)}${problems} ${esc(this._tn("problems", problems))}</span>`);
-      const upd = env.nodes.map((n) => this._nodeUpdates(n).count).filter((v) => v !== null);
+      // Updates: the new Proxmox VE version when a node has one, else just "Updates" (no package count).
+      const upd = env.nodes.map((n) => this._nodeUpdates(n)).filter((u) => u.pending);
       if (upd.length) {
-        const sum = upd.reduce((a, b) => a + b, 0);
-        foot.push(`<span class="${sum > 0 ? "hot" : ""}">${svgIcon(ICONS.update)}${sum} ${esc(this._tn("updates_lc", sum))}</span>`);
+        const pve = upd.map((u) => u.pve).filter(Boolean).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))[0];
+        foot.push(`<span class="hot">${svgIcon(ICONS.update)}${esc(pve ? `PVE ${pve}` : this._t("updates"))}</span>`);
       }
     }
     return `<style>${BASE_STYLE}${DIALOG_STYLE}${MINI_STYLE}${MOTION_STYLE}</style>
