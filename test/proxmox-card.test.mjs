@@ -78,3 +78,17 @@ test("every language has every English key", () => {
     same(missing, [], `${code} misses ${missing.join(", ")}`);
   }
 });
+
+test("node updates: no package count, the new Proxmox VE version when there is one", () => {
+  const { ProxmoxCard } = load(["ProxmoxCard"]);
+  const card = new ProxmoxCard();
+  card._hass = hass;
+  const env = resolve(hass).envs[0];
+  const [athene, heph] = env.nodes.map((n) => JSON.parse(JSON.stringify(card._nodeUpdates(n))));
+  assert.equal(athene.pending, true);
+  assert.equal(athene.pve, "9.2.26");
+  assert.equal(athene.packages, 269);
+  assert.equal(heph.pending, true);
+  assert.equal(heph.pve, null);
+  assert.equal(card._updTitle(athene), "Proxmox VE 9.2.26 · 269 Pakete");
+});

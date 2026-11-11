@@ -53,7 +53,7 @@ const node = (name, o) => {
   add(id, "sensor", "updates_total", o.updates);
   add(id, "binary_sensor", "update_avail", o.updates ? "on" : "off");
   add(id, "binary_sensor", "backup_running", o.backup ? "on" : "off");
-  add(id, "update", "node_update", o.updates ? "on" : "off", { installed_version: o.version });
+  add(id, "update", "node_update", o.updates ? "on" : "off", { installed_version: o.version, latest_version: o.updates ? `${o.latest ?? o.version}-p${o.updates}-d0` : o.version });
   return id;
 };
 
@@ -107,6 +107,7 @@ const athene = node("athene", {
   version: "9.1.11",
   up: 4300,
   updates: 269,
+  latest: "9.2.26",
 });
 const heph = node("hephaistos", {
   cpuModel: "Intel(R) Core(TM) i5-8500T",

@@ -17,8 +17,8 @@ Built for the [Proxmox VE integration](https://github.com/dougiteixeira/proxmoxv
 - Two cards: a full **Proxmox Card** and a compact **Proxmox Mini Card**
 - Header with the Proxmox VE version and how many nodes are online
 - One panel per node: CPU, RAM and root disk rings (CPU and RAM with their last 24 hours behind them), cores, memory used / total, running VMs and containers, load, IO delay, uptime
-- Node badges: pending package updates (opens the node's update entity), backup running, failed tasks
-- Counters: VMs and LXC containers running, storages, package updates
+- Node badges: updates pending, with the new Proxmox VE version when there is one (opens the node's update entity), backup running, failed tasks
+- Counters: VMs and LXC containers running, storages, nodes with updates
 - VMs and LXC containers list, grouped by node: state, CPU, RAM, IP address, uptime, locked and health flags, search and sort (name, ID, CPU, RAM), each guest's CPU over 24 h behind its row
 - Start, shutdown and reboot buttons, with an in-card confirmation; an optional hard stop button
 - Storage, ZFS pools and disks: usage, pool health, SMART status, temperature and wearout

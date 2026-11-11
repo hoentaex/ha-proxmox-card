@@ -29,7 +29,7 @@
       class HaCard extends HTMLElement {}
       customElements.define("ha-card", HaCard);
       await import(`../dist/proxmox-card.js?${Date.now()}`);
-      const { hass } = await import("./mock.js");
+      const { hass } = await import(`./mock.js?${Date.now()}`);
       const params = new URLSearchParams(location.search);
       if (params.has("dark")) document.body.classList.add("dark");
       if (params.has("bare")) document.querySelector("p").remove();
