@@ -1,5 +1,7 @@
-# ha-proxmox-card
+# Proxmox Card
 
+[![Marketplace](https://img.shields.io/badge/Marketplace-Custom-41BDF5.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=hoentaex&repository=ha-proxmox-card&category=plugin)
+[![Release](https://img.shields.io/github/v/release/hoentaex/ha-proxmox-card)](https://github.com/hoentaex/ha-proxmox-card/releases/latest)
 [![Validate](https://github.com/hoentaex/ha-proxmox-card/actions/workflows/validate.yml/badge.svg)](https://github.com/hoentaex/ha-proxmox-card/actions/workflows/validate.yml)
 [![HACS Validation](https://github.com/hoentaex/ha-proxmox-card/actions/workflows/hacs.yml/badge.svg)](https://github.com/hoentaex/ha-proxmox-card/actions/workflows/hacs.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -7,6 +9,11 @@
 Lovelace cards for Home Assistant to monitor and control a **Proxmox VE** cluster: nodes, virtual machines, LXC containers, storage, ZFS pools and disks at a glance, with start / shutdown / reboot buttons.
 
 Built for the [Proxmox VE integration](https://github.com/dougiteixeira/proxmoxve) (custom integration, available in HACS). Entities are **discovered automatically** through the Home Assistant registries: no entity to pick, any language, any entity ids.
+
+Its design and structure come from [ha-docker-card](https://github.com/juju35/ha-docker-card) by juju35, a card for Docker / Portainer; see the original project for that one.
+
+> [!WARNING]
+> This is a hobby project, maintained in spare time for personal use. It comes without any warranty or support: **use it at your own risk**. The start, shutdown, reboot and stop buttons act on your real VMs and containers.
 
 | Light | Dark |
 |---|---|
@@ -44,11 +51,20 @@ The integration creates some entities **disabled**. Enable the ones you want in 
 
 ## Installation
 
-### HACS
+### Via the Marketplace (recommended)
 
-1. HACS → ⋮ → **Custom repositories** → add `https://github.com/hoentaex/ha-proxmox-card`, type **Dashboard**
-2. Open **Proxmox Card** and click **Download**
-3. Reload the browser
+Click the button to open the repository in the Marketplace of your Home Assistant:
+
+[![Open your Home Assistant instance and open this repository inside the Marketplace.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=hoentaex&repository=ha-proxmox-card&category=plugin)
+
+Then click **Install**, and reload your browser when the Marketplace asks you to.
+
+Or by hand:
+
+1. Open **Settings → Marketplace → Add from link** (top right; this needs a GitHub account connected)
+2. Add `https://github.com/hoentaex/ha-proxmox-card`, type **Dashboard**
+3. Open **Proxmox Card** and click **Install**
+4. Clear your browser cache and refresh
 
 ### Manual
 
@@ -145,6 +161,10 @@ npm test           # unit tests (node:test)
 
 `preview/index.html` renders both cards against a mock Home Assistant (`preview/mock.js`, a two-node cluster): serve the repository root and open `/preview/index.html` (`?dark=1` for dark mode, `?full={…}` / `?mini={…}` for a card configuration).
 
-## Credits
+To release, bump `version` in `package.json`, add a `## <version>` section at the top of [CHANGELOG.md](CHANGELOG.md) and push to `main`: the **Release** workflow tests the card, creates the tag and the GitHub release with `proxmox-card.js` and that section as notes.
 
-The design, the rendering helpers and much of the card structure come from [ha-docker-card](https://github.com/juju35/ha-docker-card) by juju35 (MIT).
+## License
+
+[MIT](LICENSE), like the original [ha-docker-card](https://github.com/juju35/ha-docker-card) by juju35, from which the design and the rendering helpers come.
+
+Proxmox is a trademark of Proxmox Server Solutions GmbH. This project is not affiliated with or endorsed by Proxmox Server Solutions, nor by the authors of the original card or of the Proxmox VE integration.
