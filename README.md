@@ -120,6 +120,8 @@ title: Proxmox
 show_history: true
 show_footer: true
 zoom: true
+illustration: true
+illustration_theme: night   # optional, default follows the theme
 ```
 
 ### Options
@@ -146,6 +148,8 @@ zoom: true
 | `cpu_warning` / `cpu_critical` | both | `70` / `90` | CPU % turning orange / red |
 | `ram_warning` / `ram_critical` | both | `80` / `95` | RAM % turning orange / red |
 | `disk_warning` / `disk_critical` | full | `80` / `90` | Disk, storage, pool usage and SSD wearout % turning orange / red |
+| `illustration` | both | `true` | Illustrated header: the nodes in a small rack, a ground strip in the state colour (green all online, amber updates or problems, red a node offline). `false` keeps the classic header |
+| `illustration_theme` | both | auto | `day` or `night` picture; by default the night picture follows Home Assistant's dark theme |
 | `language` | both | auto | `en` or `de` |
 
 ## How the entities are found

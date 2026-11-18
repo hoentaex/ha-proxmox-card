@@ -130,6 +130,11 @@ const STRINGS = {
     threshold_critical: "red from",
     zoom: "Detail button",
     zoom_helper: "Switches the mini card to the full card and back",
+    illustration: "Illustrated header",
+    illustration_theme: "Header picture",
+    theme_auto: "Follow the theme",
+    theme_day: "Day",
+    theme_night: "Night",
     language: "Language",
     lang_auto: "Automatic",
   },
@@ -221,6 +226,11 @@ const STRINGS = {
     threshold_critical: "rot ab",
     zoom: "Detail-Button",
     zoom_helper: "Schaltet die Mini-Karte auf die ganze Karte um und zurück",
+    illustration: "Illustrierter Kopf",
+    illustration_theme: "Bild im Kopf",
+    theme_auto: "Wie das Theme",
+    theme_day: "Tag",
+    theme_night: "Nacht",
     language: "Sprache",
     lang_auto: "Automatisch",
   },
@@ -585,6 +595,131 @@ const BASE_STYLE = `
   .tag.upd { background: color-mix(in srgb, var(--px-accent) 15%, transparent); color: var(--px-accent); }
 `;
 
+// ---------------------------------------------------------------------------
+// Illustrated header ("banner"), in the style of juju35's cards: the nodes in a small rack in a technical room
+// ---------------------------------------------------------------------------
+
+// Night picture: forced by illustration_theme, else Home Assistant's dark theme alone.
+const isNight = (hass, config) => {
+  if (config.illustration_theme === "night") return true;
+  if (config.illustration_theme === "day") return false;
+  return !!hass?.themes?.darkMode;
+};
+
+const BRAND_ICON = "https://brands.home-assistant.io/_/proxmoxve/icon.png";
+
+// The rack, 200 × 80 at the right of the banner (preserveAspectRatio xMaxYMax), standing on the 10 px ground strip:
+// a technical room wall with a cable tray, one server per node (up to three; a fourth and more share the last slot's
+// label "+n"), each with its state LED, an activity LED and its CPU and memory as two bars, and a switch at the bottom.
+// slots: [{ name, cls, cpu, mem, cpuCls }]
+const rackScene = (slots, more) => {
+  const n = Math.max(1, slots.length);
+  const top = 19;
+  const avail = 45;
+  const gap = 3;
+  const h = Math.min(24, (avail - gap * (n - 1)) / n);
+  const bar = (x, y, hh, pct, cls) => {
+    const v = pct === null || pct === undefined ? 0 : Math.max(0, Math.min(100, pct));
+    const fh = ((hh * v) / 100).toFixed(2);
+    return `<rect class="px-bar-bg" x="${x}" y="${y}" width="5" height="${hh}" rx="1"/>` +
+      `<rect class="px-bar ${cls}" x="${x}" y="${(y + hh - fh).toFixed(2)}" width="5" height="${fh}" rx="1"/>`;
+  };
+  const servers = slots
+    .map((sl, i) => {
+      const y = top + i * (h + gap);
+      const bh = Math.max(6, h - 8);
+      const by = y + (h - bh) / 2;
+      const label = i === slots.length - 1 && more ? `${sl.name} +${more}` : sl.name;
+      const vents = h >= 18 ? [0, 1, 2].map((k) => `<line class="px-vent" x1="126" y1="${(y + 12 + k * 2.6).toFixed(1)}" x2="160" y2="${(y + 12 + k * 2.6).toFixed(1)}"/>`).join("") : "";
+      const ly = h >= 18 ? y + 8 : y + h / 2 + 2;
+      return `<g class="px-srv ${sl.cls}">
+        <rect class="px-case" x="115" y="${y.toFixed(1)}" width="72" height="${h.toFixed(1)}" rx="2"/>
+        <circle class="px-led" cx="120.5" cy="${(y + Math.min(6, h / 2 - 2)).toFixed(1)}" r="1.7"/>
+        ${h >= 12 ? `<circle class="px-act" style="animation-duration:${(0.35 + i * 0.2).toFixed(2)}s" cx="120.5" cy="${(y + h - Math.min(6, h / 2 - 2)).toFixed(1)}" r="1.7"/>` : ""}
+        <text class="px-lbl" x="126" y="${ly.toFixed(1)}">${esc(label)}</text>
+        ${vents}
+        ${bar(168, by, bh, sl.cpu, sl.cpuCls)}${bar(176, by, bh, sl.mem, "mem")}
+      </g>`;
+    })
+    .join("");
+  return `<svg class="scene" viewBox="0 0 200 80" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
+    <g class="px-wall"><line x1="0" y1="20" x2="200" y2="20"/><line x1="0" y1="40" x2="200" y2="40"/><line x1="0" y1="60" x2="200" y2="60"/></g>
+    <path class="px-tray" d="M0 8H200"/>
+    <path class="px-wire" d="M150 8V14"/>
+    <ellipse class="px-shadow" cx="151" cy="79.6" rx="44" ry="2.2"/>
+    <rect class="px-rack" x="110" y="14" width="82" height="66" rx="3"/>
+    ${servers}
+    <rect class="px-case" x="115" y="67" width="72" height="9" rx="1.5"/>
+    ${[0, 1, 2, 3, 4, 5, 6, 7].map((k) => `<rect class="px-port${k % 3 ? "" : " b"}" style="animation-delay:${(k * 0.13).toFixed(2)}s" x="${121 + k * 7}" y="70" width="4" height="3" rx=".6"/>`).join("")}
+  </svg>`;
+};
+
+const BANNER_STYLE = `
+  .banner { position: relative; overflow: hidden; height: 90px; --g: 10px; --sw: min(200px, 54cqw);
+            background: #e7eaee; color: #0d2a45; --sky-muted: #3b5b78; }
+  .banner.night { background: #232a36; color: #fff; --sky-muted: rgba(255,255,255,.78); }
+  .banner .scene { position: absolute; right: 0; bottom: var(--g); height: calc(100% - var(--g)); width: var(--sw); overflow: visible;
+                   -webkit-mask-image: linear-gradient(90deg, rgba(0,0,0,.35) 0, rgba(0,0,0,.35) 12%, #000 42%);
+                   mask-image: linear-gradient(90deg, rgba(0,0,0,.35) 0, rgba(0,0,0,.35) 12%, #000 42%); }
+  .banner .ground { position: absolute; left: 0; right: 0; bottom: 0; height: var(--g); --t: rgba(255,255,255,.55); }
+  .banner.night .ground { --t: rgba(255,255,255,.22); }
+  .ground.ok { background-image: repeating-linear-gradient(90deg, var(--t) 0 1px, transparent 1px 12px), linear-gradient(90deg, #8fd47a, #43a047); box-shadow: inset 0 2px 0 #b5e3a5; }
+  .night .ground.ok { background-image: repeating-linear-gradient(90deg, var(--t) 0 1px, transparent 1px 12px), linear-gradient(90deg, #2a5a2c, #1c4220); box-shadow: inset 0 2px 0 #356a38; }
+  .ground.warn { background-image: repeating-linear-gradient(90deg, var(--t) 0 1px, transparent 1px 12px), linear-gradient(90deg, #ffd27a, #f29d16); box-shadow: inset 0 2px 0 #ffe3a8; }
+  .night .ground.warn { background-image: repeating-linear-gradient(90deg, var(--t) 0 1px, transparent 1px 12px), linear-gradient(90deg, #6b4f1a, #4f3810); box-shadow: inset 0 2px 0 #7d6026; }
+  .ground.crit { background-image: repeating-linear-gradient(90deg, var(--t) 0 1px, transparent 1px 12px), linear-gradient(90deg, #f29185, #db4437); box-shadow: inset 0 2px 0 #f7b7ae; }
+  .night .ground.crit { background-image: repeating-linear-gradient(90deg, var(--t) 0 1px, transparent 1px 12px), linear-gradient(90deg, #6a2620, #4c1914); box-shadow: inset 0 2px 0 #7d332b; }
+  .ground.idle { background-image: repeating-linear-gradient(90deg, var(--t) 0 1px, transparent 1px 12px), linear-gradient(90deg, #d3d8de, #aab2bb); box-shadow: inset 0 2px 0 #e6e9ed; }
+  .night .ground.idle { background-image: repeating-linear-gradient(90deg, var(--t) 0 1px, transparent 1px 12px), linear-gradient(90deg, #3a414b, #2b3139); box-shadow: inset 0 2px 0 #4a525d; }
+  .banner .head { position: absolute; z-index: 1; left: 0; top: 0; bottom: var(--g); right: calc(var(--sw) - 60px); display: flex; align-items: center;
+                  gap: 10px; padding: 8px 8px 8px 14px; min-width: 0; }
+  .banner .logo { position: relative; background: rgba(255,255,255,.62); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 28%, transparent);
+                  color: color-mix(in srgb, var(--c) 82%, #0d2a45); }
+  .banner .logo .icon { width: 24px; height: 24px; }
+  .banner.night .logo { background: rgba(255,255,255,.12); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); color: color-mix(in srgb, var(--c) 75%, #fff); }
+  .banner .brand { position: absolute; right: -4px; bottom: -4px; width: 18px; height: 18px; border-radius: 5px; padding: 2px; box-sizing: border-box;
+                   background: #fff; object-fit: contain; box-shadow: 0 0 0 1px rgba(13,42,69,.16), 0 1px 3px rgba(13,42,69,.18); }
+  .banner .titles { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: center; align-self: stretch; }
+  .banner .trow { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .banner .name { flex: 0 1 auto; min-width: 0; }
+  .banner .sub { font-size: 13px; color: var(--sky-muted); }
+  .banner .chip { flex: none; margin: 0; padding: 1px 8px; line-height: 16px; white-space: nowrap; max-width: 100%; box-sizing: border-box; overflow: hidden;
+                  background: color-mix(in srgb, var(--c) 18%, rgba(255,255,255,.78)); color: color-mix(in srgb, var(--c) 45%, #0d2a45); }
+  .banner.night .chip { background: color-mix(in srgb, var(--c) 30%, rgba(8,18,38,.55)); color: color-mix(in srgb, var(--c) 35%, #fff); }
+  .banner .chip .dot { width: 7px; height: 7px; }
+  .banner .titles.below .trow { display: contents; }
+  .banner .titles.below .chip { order: 9; align-self: flex-start; margin-top: 3px; }
+  .banner .titles.dotonly .chip { padding: 4px; } .banner .titles.dotonly .chip-label { display: none; }
+  .banner .zoom { position: absolute; z-index: 2; top: 5px; right: 5px; margin: 0; width: 24px; height: 24px; color: #33506b;
+                  background: rgba(255,255,255,.55); box-shadow: inset 0 0 0 1px rgba(255,255,255,.7); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+  .banner .zoom:hover { background: rgba(255,255,255,.75); color: #33506b; }
+  .banner.night .zoom { color: #fff; background: rgba(255,255,255,.12); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); }
+  .banner.night .zoom:hover { background: rgba(255,255,255,.22); color: #fff; }
+  .banner:has(> .zoom) .scene { right: 34px; }
+  .banner:has(> .zoom) .head { right: calc(var(--sw) - 24px); }
+  .banner + .content { padding-top: 12px; }
+  @container (max-width: 280px) { .banner .scene { display: none; } .banner .head, .banner:has(> .zoom) .head { right: 30px; } }
+  @container (max-width: 200px) { .banner .chip { padding: 4px; } .banner .chip-label { display: none; } }
+  /* The rack */
+  .px-wall line { stroke: #d6dbe1; stroke-width: .8; } .night .px-wall line { stroke: #2e3746; }
+  .px-tray { stroke: #c4cbd3; stroke-width: 3; } .night .px-tray { stroke: #3a4456; }
+  .px-wire { fill: none; stroke: #2f80ed; stroke-width: 1.6; stroke-dasharray: 3 4; animation: px-wire 1s linear infinite; }
+  .px-shadow { fill: #000; opacity: .14; } .night .px-shadow { opacity: .35; }
+  .px-rack { fill: #4a5361; } .night .px-rack { fill: #141920; }
+  .px-case { fill: #f4f6f8; stroke: #c4cbd3; } .night .px-case { fill: #27303d; stroke: #455066; }
+  .px-vent { stroke: #cfd5dc; stroke-width: 1; } .night .px-vent { stroke: #3b4657; }
+  .px-lbl { font: 600 5.6px var(--paper-font-body1_-_font-family, Roboto, sans-serif); fill: #50607a; } .night .px-lbl { fill: #a9b6c8; }
+  .px-led { fill: var(--px-ok); animation: px-blink 1.2s steps(2) infinite; }
+  .px-act { fill: #2f9bff; animation: px-blink .45s steps(2) infinite; }
+  .px-srv.crit .px-led { fill: var(--px-crit); animation: none; } .px-srv.crit .px-act { display: none; } .px-srv.crit .px-case { opacity: .7; }
+  .px-srv.warn .px-led { fill: var(--px-warn); } .px-srv.idle .px-led { fill: var(--px-idle); animation: none; } .px-srv.idle .px-act { display: none; }
+  .px-bar-bg { fill: #e3e7ec; } .night .px-bar-bg { fill: #1b2230; }
+  .px-bar { fill: var(--px-ok); transition: y .6s ease, height .6s ease; } .px-bar.warn { fill: var(--px-warn); } .px-bar.crit { fill: var(--px-crit); } .px-bar.mem { fill: #2f9bff; }
+  .px-port { fill: var(--px-ok); animation: px-blink 1.2s steps(2) infinite; } .px-port.b { fill: #2f9bff; }
+  @keyframes px-wire { to { stroke-dashoffset: -14; } }
+  @keyframes px-blink { 50% { opacity: .25; } }
+`;
+
 const MOTION_STYLE = `
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition: none !important; animation: none !important; }
@@ -708,6 +843,8 @@ class ProxmoxBase extends HTMLElement {
     window.removeEventListener("keydown", this._onKey);
     clearInterval(this._tick);
     this._tick = null;
+    this._ro?.disconnect();
+    this._ro = null;
   }
 
   setConfig(config) {
@@ -767,7 +904,7 @@ class ProxmoxBase extends HTMLElement {
 
   _signature() {
     const h = this._hass;
-    const sig = [h.entities, h.devices, h.language, h.locale?.language];
+    const sig = [h.entities, h.devices, h.language, h.locale?.language, h.themes?.darkMode];
     const { env } = findEnv(h, this._config);
     if (!env) return sig;
     for (const group of [env.cluster, ...env.nodes, ...env.guests, ...env.storages, ...env.zfs, ...env.disks])
@@ -785,6 +922,28 @@ class ProxmoxBase extends HTMLElement {
       this._html = html;
       morph(this.shadowRoot, html);
     }
+    this._fitPill();
+  }
+
+  // The status pill in the banner: right after the title when the title and the whole pill fit on that row, else on
+  // its own line under the subtitle; when even that runs into the ground strip, its dot alone. Measured, so that
+  // every language and width gets it right; refitted when the card is resized.
+  _fitPill() {
+    const t = this.shadowRoot?.querySelector?.(".banner .titles");
+    if (!t || !t.isConnected) return;
+    if (!this._ro && typeof ResizeObserver !== "undefined") {
+      this._ro = new ResizeObserver(() => this._fitPill());
+      this._ro.observe(this);
+    }
+    t.classList.remove("below", "dotonly");
+    const name = t.querySelector(".name");
+    const chip = t.querySelector(".chip");
+    if (!name || !chip || !t.clientWidth) return;
+    if (name.scrollWidth + 8 + chip.scrollWidth <= t.clientWidth + 0.5) return;
+    t.classList.add("below");
+    const banner = t.closest(".banner");
+    const floor = banner.getBoundingClientRect().bottom - 10 + 0.5;
+    if (chip.getBoundingClientRect().bottom > floor) t.classList.add("dotonly");
   }
 
   _call(domain, service, data) {
@@ -1065,6 +1224,7 @@ class ProxmoxBase extends HTMLElement {
     ].filter(Boolean);
     if (total === 1 && !c.title) sub[sub.length - 1] = env.nodes[0].name;
     const chipEntity = env.cluster?.entities.cluster_nodes_online ?? (total === 1 ? this._nodeState(env.nodes[0]).id : null);
+    if (c.illustration !== false) return this._banner(env, chipCls, chipText, chipEntity, sub);
     return `
       <div class="header">
         <a class="logo ${chipCls}" href="${esc(this._logoUrl(env))}" target="_blank" rel="noopener noreferrer" title="Proxmox VE" aria-label="Proxmox VE">${svgIcon(ICONS.server)}</a>
@@ -1073,6 +1233,39 @@ class ProxmoxBase extends HTMLElement {
           ${sub.length ? `<div class="sub">${esc(sub.join(" · "))}</div>` : ""}
         </div>
         <span class="chip ${chipEntity ? "clickable" : ""} ${chipCls}" ${chipEntity ? `role="button" tabindex="0" data-entity="${esc(chipEntity)}"` : ""} title="${esc(chipText)}" aria-label="${esc(chipText)}"><span class="dot"></span><span class="chip-label">${esc(chipText)}</span></span>
+        ${this._zoomButton()}
+      </div>`;
+  }
+
+  // The illustrated header: the logo, the title with the status pill and the subtitle on the wall, the nodes in a rack
+  // at the right, and the ground strip in the state colour: red when a node is offline, amber when a node has a
+  // problem (failed tasks) or a pending update, else the pill's colour.
+  _banner(env, chipCls, chipText, chipEntity, sub) {
+    const c = this._config;
+    const slots = env.nodes.slice(0, 3).map((n) => {
+      const u = this._usage(n.entities);
+      const cls = stateClass(this._nodeState(n).state);
+      return { name: n.name, cls, cpu: cls === "ok" ? u.cpu : 0, mem: cls === "ok" ? u.mem : 0, cpuCls: this._level("cpu", u.cpu) };
+    });
+    const more = Math.max(0, env.nodes.length - 3);
+    const offline = env.nodes.some((n) => stateClass(this._nodeState(n).state) === "crit");
+    const attention = env.nodes.some((n) => this._nodeProblem(n) || this._nodeUpdates(n).pending);
+    const ground = offline ? "crit" : chipCls === "ok" && attention ? "warn" : chipCls;
+    const name = c.title || "Proxmox";
+    return `
+      <div class="banner${isNight(this._hass, c) ? " night" : ""}">
+        ${rackScene(slots, more)}
+        <div class="head">
+          <a class="logo ${chipCls}" href="${esc(this._logoUrl(env))}" target="_blank" rel="noopener noreferrer" title="Proxmox VE" aria-label="Proxmox VE">${svgIcon(ICONS.server)}<img class="brand" src="${BRAND_ICON}" alt="" loading="lazy" referrerpolicy="no-referrer"></a>
+          <div class="titles">
+            <div class="trow">
+              <div class="name" title="${esc(name)}">${esc(name)}</div>
+              <span class="chip ${chipEntity ? "clickable" : ""} ${chipCls}" ${chipEntity ? `role="button" tabindex="0" data-entity="${esc(chipEntity)}"` : ""} title="${esc(chipText)}" aria-label="${esc(chipText)}"><span class="dot"></span><span class="chip-label">${esc(chipText)}</span></span>
+            </div>
+            ${sub.length ? `<div class="sub">${esc(sub.join(" · "))}</div>` : ""}
+          </div>
+        </div>
+        <div class="ground ${ground}"></div>
         ${this._zoomButton()}
       </div>`;
   }
@@ -1252,7 +1445,7 @@ class ProxmoxCard extends ProxmoxBase {
     if (c.show_counts !== false) parts.push(this._counts(env));
     if (c.show_guests !== false) parts.push(this._guests(env));
     if (c.show_storage !== false) parts.push(this._storage(env));
-    return `<style>${BASE_STYLE}${DIALOG_STYLE}${FULL_STYLE}${MOTION_STYLE}</style>
+    return `<style>${BASE_STYLE}${DIALOG_STYLE}${FULL_STYLE}${BANNER_STYLE}${MOTION_STYLE}</style>
       <ha-card>
         ${this._header(env)}
         <div class="content">${parts.filter(Boolean).join("")}</div>
@@ -1613,7 +1806,7 @@ class ProxmoxMiniCard extends ProxmoxCard {
         foot.push(`<span class="hot">${svgIcon(ICONS.update)}${esc(pve ? `PVE ${pve}` : this._t("updates"))}</span>`);
       }
     }
-    return `<style>${BASE_STYLE}${DIALOG_STYLE}${MINI_STYLE}${MOTION_STYLE}</style>
+    return `<style>${BASE_STYLE}${DIALOG_STYLE}${MINI_STYLE}${BANNER_STYLE}${MOTION_STYLE}</style>
       <ha-card>
         ${this._header(env)}
         <div class="content">
@@ -1663,6 +1856,19 @@ class ProxmoxEditorBase extends HTMLElement {
           name,
           selector: { number: { min: 0, max: 100, step: 1, mode: "box", unit_of_measurement: "%" } },
         })),
+      },
+      {
+        name: "illustration_theme",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              { value: "", label: tr("theme_auto") },
+              { value: "day", label: tr("theme_day") },
+              { value: "night", label: tr("theme_night") },
+            ],
+          },
+        },
       },
       {
         name: "language",
@@ -1740,6 +1946,7 @@ class ProxmoxCardEditor extends ProxmoxEditorBase {
       ["group_by_node", true],
       ["expand_guests", true],
       ["expand_storage", false],
+      ["illustration", true],
     ];
   }
 }
@@ -1750,6 +1957,7 @@ class ProxmoxMiniCardEditor extends ProxmoxEditorBase {
       ["show_history", true],
       ["show_footer", true],
       ["zoom", true],
+      ["illustration", true],
     ];
   }
 

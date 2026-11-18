@@ -6,7 +6,7 @@ import { load } from "./load.mjs";
 // Objects built in the card's vm context have other prototypes: compared as plain JSON.
 const same = (a, b, msg) => assert.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)), msg);
 
-const { resolve, findEnv, deviceKind, shortName, fmtSince, bytesOf, STRINGS } = load([
+const { resolve, findEnv, deviceKind, shortName, fmtSince, bytesOf, STRINGS, isNight, rackScene } = load([
   "resolve",
   "findEnv",
   "deviceKind",
@@ -14,6 +14,8 @@ const { resolve, findEnv, deviceKind, shortName, fmtSince, bytesOf, STRINGS } = 
   "fmtSince",
   "bytesOf",
   "STRINGS",
+  "isNight",
+  "rackScene",
 ]);
 
 test("one environment per config entry, with its nodes, guests, pools and disks", () => {
@@ -91,4 +93,26 @@ test("node updates: no package count, the new Proxmox VE version when there is o
   assert.equal(heph.pending, true);
   assert.equal(heph.pve, null);
   assert.equal(card._updTitle(athene), "Proxmox VE 9.2.26 · 269 Pakete");
+});
+
+test("night picture follows the dark theme unless forced", () => {
+  assert.equal(isNight({ themes: { darkMode: true } }, {}), true);
+  assert.equal(isNight({ themes: { darkMode: false } }, {}), false);
+  assert.equal(isNight({ themes: { darkMode: true } }, { illustration_theme: "day" }), false);
+  assert.equal(isNight({}, { illustration_theme: "night" }), true);
+});
+
+test("the rack draws one server per node, up to three, the last one counting the others", () => {
+  const slot = (name) => ({ name, cls: "ok", cpu: 20, mem: 50, cpuCls: "ok" });
+  const two = rackScene([slot("athene"), slot("hephaistos")], 0);
+  assert.equal((two.match(/class="px-srv /g) || []).length, 2);
+  assert.match(two, />athene</);
+  const five = rackScene([slot("a"), slot("b"), slot("c")], 2);
+  assert.equal((five.match(/class="px-srv /g) || []).length, 3);
+  assert.match(five, />c \+2</);
+  assert.match(rackScene([{ name: "<x>", cls: "crit", cpu: null, mem: null, cpuCls: "ok" }], 0), /&lt;x&gt;/);
+});
+
+test("illustration labels exist in every language", () => {
+  for (const lang of Object.keys(STRINGS)) for (const k of ["illustration", "illustration_theme", "theme_auto", "theme_day", "theme_night"]) assert.ok(STRINGS[lang][k], `${lang}.${k}`);
 });

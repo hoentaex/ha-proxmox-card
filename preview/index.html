@@ -31,7 +31,13 @@
       await import(`../dist/proxmox-card.js?${Date.now()}`);
       const { hass } = await import(`./mock.js?${Date.now()}`);
       const params = new URLSearchParams(location.search);
-      if (params.has("dark")) document.body.classList.add("dark");
+      const setDark = (on) => {
+        document.body.classList.toggle("dark", on);
+        const h = { ...window.cards?.hass ?? hass, themes: { ...(hass.themes || {}), darkMode: on } };
+        if (window.cards) { window.cards.hass = h; window.cards.full.hass = h; window.cards.mini.hass = h; }
+        return h;
+      };
+      if (params.has("dark")) { document.body.classList.add("dark"); hass.themes = { ...(hass.themes || {}), darkMode: true }; }
       if (params.has("bare")) document.querySelector("p").remove();
       const full = document.createElement("proxmox-card");
       full.setConfig(JSON.parse(params.get("full") || "{}"));
@@ -42,7 +48,7 @@
       mini.hass = hass;
       document.getElementById("mini").append(mini);
       window.cards = { full, mini, hass };
-      document.getElementById("dark").addEventListener("change", (e) => document.body.classList.toggle("dark", e.target.checked));
+      document.getElementById("dark")?.addEventListener("change", (e) => setDark(e.target.checked));
     </script>
   </body>
 </html>

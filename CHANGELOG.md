@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 (unreleased)
+
+- **Illustrated header** on the full and mini cards, in the style of juju35's cards: 90 px banner with the title and the status pill on a technical room wall, the nodes drawn in a small rack at the right (state LED, activity LED, CPU and memory bars per node, up to three nodes) and a 10 px ground strip in the state colour: green all online, amber when a node has pending updates or failed tasks, red when a node is offline.
+- Round logo on frosted glass with the Proxmox logo at its bottom right; the status pill follows the title when it fits, else goes under the subtitle (its dot alone when there is no room left).
+- Night picture with Home Assistant's dark theme; `illustration_theme: day | night` forces one, `illustration: false` keeps the classic header. Both options in the visual editor.
+- Mini card: frosted round detail button in the banner's top right corner. Below 280 px the rack is left out.
+
 ## 0.1.4 (2026-11-11)
 
 - Updates no longer show the number of packages (hundreds of Debian packages): a node badge "Updates", or "PVE 9.2.26" when a new Proxmox VE version is pending, with the package count in its tooltip. The counter shows the nodes with updates, the mini card the new Proxmox VE version.
