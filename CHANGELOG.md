@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 (unreleased)
+## 0.2.0 (2026-11-18)
 
 - **Illustrated header** on the full and mini cards, in the style of juju35's cards: 90 px banner with the title and the status pill on a technical room wall, the nodes drawn in a small rack at the right (state LED, activity LED, CPU and memory bars per node, up to three nodes) and a 10 px ground strip in the state colour: green all online, amber when a node has pending updates or failed tasks, red when a node is offline.
 - Round logo on frosted glass with the Proxmox logo at its bottom right; the status pill follows the title when it fits, else goes under the subtitle (its dot alone when there is no room left).
