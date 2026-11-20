@@ -54,6 +54,14 @@ const STRINGS = {
     vm: "VM",
     storage: "Storage",
     updates: "Updates",
+    k_of_running: "/ {n} running",
+    k_stopped: "{n} stopped",
+    k_of_ok: "/ {n} fine",
+    k_problems: "{n} with a problem",
+    k_of_nodes: "/ {n} nodes",
+    k_pve_available: "PVE {v} available",
+    k_updates_pending: "Updates available",
+    k_up_to_date: "Up to date",
     problems: "Problems",
     problems_one: "Problem",
     cores: "cores",
@@ -150,6 +158,14 @@ const STRINGS = {
     vm: "VM",
     storage: "Speicher",
     updates: "Updates",
+    k_of_running: "/ {n} laufen",
+    k_stopped: "{n} gestoppt",
+    k_of_ok: "/ {n} in Ordnung",
+    k_problems: "{n} mit Problem",
+    k_of_nodes: "/ {n} Nodes",
+    k_pve_available: "PVE {v} verfügbar",
+    k_updates_pending: "Updates verfügbar",
+    k_up_to_date: "Aktuell",
     problems: "Probleme",
     problems_one: "Problem",
     cores: "Kerne",
@@ -1294,6 +1310,68 @@ class ProxmoxBase extends HTMLElement {
   }
 }
 
+
+// ---------------------------------------------------------------------------
+// KPI tiles, as in the energy, oil, heating and Tibber cards: a round icon, the label, the value large with a small
+// unit, a sub line and a thin bar. Tiles without a value are left out, and rows never show a gap: a tile that does not
+// fit the rest of its row and the last tile of a short row widen until the row is full.
+// ---------------------------------------------------------------------------
+
+const fillRows = (spans, cols) => {
+  const out = spans.map((s) => Math.max(1, Math.min(cols, s)));
+  let used = 0;
+  for (let i = 0; i < out.length; i++) {
+    if (used + out[i] > cols) {
+      out[i - 1] += cols - used;
+      used = 0;
+    }
+    used = (used + out[i]) % cols;
+  }
+  if (used > 0 && out.length) out[out.length - 1] += cols - used;
+  return out;
+};
+
+const kpiGrid = (list, cols = 2) => {
+  const tiles = list.filter((x) => x && x.v !== null && x.v !== undefined && x.v !== "");
+  if (!tiles.length) return "";
+  const spans = fillRows(
+    tiles.map((x) => (x.wide ? 2 : 1)),
+    cols
+  );
+  const pct = (v) => Math.max(0, Math.min(100, v));
+  return `<div class="kpis" style="--cols:${cols}">${tiles
+    .map((x, i) => {
+      const click = x.entity ? ` clickable" role="button" tabindex="0" data-entity="${esc(x.entity)}` : "";
+      return `<div class="kpi${x.st ? ` ${x.st}` : ""}${click}" data-key="${esc(x.key)}" style="--kc:${x.c};grid-column:span ${spans[i]}">
+        <span class="ki">${svgIcon(x.icon)}</span>
+        <span class="kk">${esc(x.k)}</span>
+        <span class="kv">${esc(x.v)}${x.u ? `<small>${esc(x.u)}</small>` : ""}</span>
+        ${x.s ? `<span class="ks">${esc(x.s)}</span>` : ""}
+        ${Number.isFinite(x.p) ? `<span class="kb"><i style="width:${pct(x.p).toFixed(1)}%"></i></span>` : ""}
+      </div>`;
+    })
+    .join("")}</div>`;
+};
+
+const KPI_STYLE = `
+  .kpis { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 8px; }
+  .kpi { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; padding: 11px 12px 12px;
+         border-radius: 12px; background: var(--secondary-background-color, rgba(127,127,127,.08)); }
+  .kpi.clickable:hover { filter: brightness(1.04); }
+  .kpi .ki { width: 32px; height: 32px; flex: none; border-radius: 50%; display: grid; place-items: center; margin-bottom: 2px;
+             color: color-mix(in srgb, var(--kc) 82%, var(--primary-text-color)); background: color-mix(in srgb, var(--kc) 18%, var(--ha-card-background, var(--card-background-color, #fff))); }
+  .kpi .ki .icon { width: 18px; height: 18px; }
+  .kpi .kk { font-size: 12.5px; line-height: 1.3; color: var(--secondary-text-color); }
+  .kpi .kv { font-size: 22px; font-weight: 500; line-height: 1.15; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  .kpi .kv small { display: inline-block; white-space: nowrap; font-size: 12px; font-weight: 400; color: var(--secondary-text-color); margin-left: 4px; }
+  .kpi .ks { font-size: 11.5px; line-height: 1.35; color: var(--secondary-text-color); }
+  .kpi .kb { position: relative; align-self: stretch; height: 4px; margin-top: auto; border-radius: 2px; background: color-mix(in srgb, var(--secondary-text-color) 25%, transparent); }
+  .kpi .ks + .kb, .kpi .kv + .kb { margin-top: 6px; }
+  .kpi .kb i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: var(--kc); }
+  .kpi.warn, .kpi.bad { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--kc) 45%, transparent); background: color-mix(in srgb, var(--kc) 8%, var(--secondary-background-color, rgba(127,127,127,.08))); }
+  .kpi.warn .kv, .kpi.bad .kv { color: color-mix(in srgb, var(--kc) 70%, var(--primary-text-color)); }
+`;
+
 // ---------------------------------------------------------------------------
 // Full card
 // ---------------------------------------------------------------------------
@@ -1309,25 +1387,28 @@ const FULL_STYLE = `
   .section-title.closed { margin-bottom: 0; }
   .section-title.closed .chevron { transform: rotate(-90deg); }
   /* A node: its name line, then its CPU, RAM and disk rings. */
-  .nodes { display: flex; flex-direction: column; gap: 12px; }
-  .node { border-radius: 12px; padding: 14px 16px; background: var(--secondary-background-color, rgba(127,127,127,.06)); min-width: 0;
+  .nodes { display: flex; flex-direction: column; gap: 8px; }
+  .node { border-radius: 12px; padding: 10px 12px; background: var(--secondary-background-color, rgba(127,127,127,.06)); min-width: 0;
           display: flex; flex-direction: column; gap: 8px; }
-  .node-head { display: flex; align-items: center; gap: 6px; min-width: 0; }
-  .node-head .nname { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .node-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .node-head .dot { width: 8px; height: 8px; }
+  .node-head .nname { flex: 1 1 auto; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .node-head .tags { display: flex; gap: 4px; margin-left: auto; min-width: 0; flex-wrap: nowrap; overflow: hidden; }
   .node .detail { font-size: 12px; color: var(--secondary-text-color); line-height: 1.4; }
   .gauges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .gauge { display: flex; flex-direction: column; align-items: center; min-width: 0; position: relative; border-radius: 10px; overflow: hidden; }
   .gauge > :not(.spark) { position: relative; }
   .gauge .spark { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-  .gauge .gw { position: relative; width: min(64px, 100%); aspect-ratio: 1; }
+  .gauge .gw { position: relative; width: min(46px, 100%); aspect-ratio: 1; }
+  .node .gauge { gap: 4px; }
+  .node .gauge .lbl { font-size: 12px; }
   .ring { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
   .ring circle { fill: none; stroke-width: 6; }
   .ring .track { stroke: var(--divider-color, rgba(127,127,127,.25)); }
   .ring .value { stroke: var(--c, var(--px-accent)); stroke-linecap: round; transition: stroke-dasharray .6s ease; }
   .gauge .val { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .gauge .val b { font-size: 13px; font-weight: 500; }
-  .gauge .val .icon { width: 12px; height: 12px; color: var(--secondary-text-color); }
+  .gauge .val b { font-size: 12px; font-weight: 500; }
+  .gauge .val .icon { display: none; }
   .gauge .lbl { font-size: 12px; color: var(--secondary-text-color); text-align: center; line-height: 1.35; max-width: 100%; overflow-wrap: break-word; }
   .gauge .lbl small { display: block; font-size: 11px; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   @container (max-width: 299px) {
@@ -1441,11 +1522,11 @@ class ProxmoxCard extends ProxmoxBase {
     if (error) return this._error(error);
     const c = this._config;
     const parts = [];
-    if (c.show_nodes !== false && env.nodes.length) parts.push(this._nodes(env));
     if (c.show_counts !== false) parts.push(this._counts(env));
+    if (c.show_nodes !== false && env.nodes.length) parts.push(this._nodes(env));
     if (c.show_guests !== false) parts.push(this._guests(env));
     if (c.show_storage !== false) parts.push(this._storage(env));
-    return `<style>${BASE_STYLE}${DIALOG_STYLE}${FULL_STYLE}${BANNER_STYLE}${MOTION_STYLE}</style>
+    return `<style>${BASE_STYLE}${DIALOG_STYLE}${FULL_STYLE}${KPI_STYLE}${BANNER_STYLE}${MOTION_STYLE}</style>
       <ha-card>
         ${this._header(env)}
         <div class="content">${parts.filter(Boolean).join("")}</div>
@@ -1460,10 +1541,10 @@ class ProxmoxCard extends ProxmoxBase {
     return ids;
   }
 
-  _gauge(id, label, icon, pct, cls, hist) {
+  _gauge(id, label, icon, pct, cls, hist, withSpark = true) {
     const range = rangeText(hist, this._loc());
     const display = pct === null ? "—" : `${Math.round(pct)}%`;
-    return `<div class="gauge clickable ${cls}" role="button" tabindex="0" data-entity="${esc(id || "")}"${range ? ` title="${esc(label.replace(/<[^>]+>/g, " ") + range)}"` : ""}>${spark(hist, this._histEnd, 100)}
+    return `<div class="gauge clickable ${cls}" role="button" tabindex="0" data-entity="${esc(id || "")}"${range ? ` title="${esc(label.replace(/<[^>]+>/g, " ") + range)}"` : ""}>${withSpark ? spark(hist, this._histEnd, 100) : ""}
       <div class="gw">${ring(pct)}<div class="val">${svgIcon(icon)}<b>${display}</b></div></div>
       <div class="lbl">${label}</div>
     </div>`;
@@ -1504,8 +1585,9 @@ class ProxmoxCard extends ProxmoxBase {
           ? `<span class="tag upd clickable" role="button" tabindex="0" data-entity="${esc(upd.id)}" title="${esc(this._updTitle(upd))}" aria-label="${esc(this._updTitle(upd))}">${svgIcon(ICONS.update)}${esc(upd.pve ? `PVE ${upd.pve}` : this._t("updates"))}</span>`
           : "",
       ].join("");
-      const memLabel = u.used !== null && u.total ? `${this._t("memory")}<small>${esc(fmtBytesPair(u.used, u.total, loc))}</small>` : this._t("memory");
-      const cpuLabel = u.cores ? `${this._t("cpu")}<small>${esc(fmtNum(u.cores, loc, 0))} ${esc(this._tn("cores", u.cores))}</small>` : this._t("cpu");
+      // As in the KPI mockup: plain rings with their name under them; cores and memory go into the detail line.
+      if (u.cores) detail.splice(2, 0, `${fmtNum(u.cores, loc, 0)} ${this._tn("cores", u.cores)}`);
+      if (u.used !== null && u.total) detail.splice(u.cores ? 3 : 2, 0, `${this._t("memory")} ${fmtBytesPair(u.used, u.total, loc)}`);
       return `<div class="node" data-key="${esc(n.id)}">
         <div class="node-head">
           <span class="dot ${stateClass(st.state)}"></span>
@@ -1513,9 +1595,9 @@ class ProxmoxCard extends ProxmoxBase {
           <span class="tags">${tags}</span>
         </div>
         <div class="gauges">
-          ${this._gauge(u.cpuId, cpuLabel, ICONS.cpu, u.cpu, this._level("cpu", u.cpu), hist?.[u.cpuId])}
-          ${this._gauge(u.memId, memLabel, ICONS.ram, u.mem, this._level("ram", u.mem), hist?.[e.memory_used_perc])}
-          ${this._gauge(u.diskId, this._t("disk"), ICONS.disk, u.disk, this._level("disk", u.disk))}
+          ${this._gauge(u.cpuId, this._t("cpu"), ICONS.cpu, u.cpu, this._level("cpu", u.cpu), hist?.[u.cpuId], false)}
+          ${this._gauge(u.memId, this._t("memory"), ICONS.ram, u.mem, this._level("ram", u.mem), hist?.[e.memory_used_perc], false)}
+          ${this._gauge(u.diskId, this._t("disk"), ICONS.disk, u.disk, this._level("disk", u.disk), null, false)}
         </div>
         <div class="detail">${esc(detail.join(" · "))}</div>
       </div>`;
@@ -1523,25 +1605,58 @@ class ProxmoxCard extends ProxmoxBase {
     return `<div class="nodes">${blocks.join("")}</div>`;
   }
 
+  /** VMs, containers, storage and updates as KPI tiles, the bar showing how much of each is running or fine. */
   _counts(env) {
     const gc = this._guestCounts(env);
+    const loc = this._loc();
     // Updates: the nodes with pending updates, out of the nodes that report them.
     const updates = env.nodes.map((n) => this._nodeUpdates(n)).filter((u) => u.pending !== null);
-    const updNodes = updates.filter((u) => u.pending).length;
-    const storageProblems = [...env.storages, ...env.zfs, ...env.disks].filter((it) => this._itemInfo(it).bad).length;
-    const tile = (key, icon, label, value, cls = "", entity = "") =>
-      `<div class="count-tile ${entity ? "clickable" : ""} ${cls}" ${entity ? `role="button" tabindex="0" data-entity="${esc(entity)}"` : ""} data-key="${key}"><div class="top">${svgIcon(icon)}<span class="v">${esc(value)}</span></div><div class="k">${esc(label)}</div></div>`;
-    const tiles = [
-      gc.qemu.total ? tile("vms", ICONS.vm, this._t("vms"), `${gc.qemu.running}/${gc.qemu.total}`, "", env.cluster?.entities.cluster_qemu_running) : "",
-      gc.lxc.total ? tile("lxcs", ICONS.lxc, this._t("lxcs"), `${gc.lxc.running}/${gc.lxc.total}`, "", env.cluster?.entities.cluster_lxc_running) : "",
-      env.storages.length + env.zfs.length
-        ? tile("storage", ICONS.storage, this._t("storage"), env.storages.length + env.zfs.length, storageProblems ? "bad" : "")
-        : "",
-      updates.length
-        ? tile("updates", ICONS.update, this._t("updates"), `${updNodes}/${updates.length}`, updNodes ? "hot" : "", env.nodes.length === 1 ? updates[0].id : "")
-        : "",
-    ].filter(Boolean);
-    return tiles.length ? `<div class="counts">${tiles.join("")}</div>` : "";
+    const pending = updates.filter((u) => u.pending);
+    const stores = [...env.storages, ...env.zfs];
+    const problems = [...stores, ...env.disks].filter((it) => this._itemInfo(it).bad).length;
+    const guests = (type, key, icon, label, entity) => {
+      const g = gc[type];
+      if (!g.total) return null;
+      const stopped = g.total - g.running;
+      return {
+        key,
+        k: label,
+        v: fmtNum(g.running, loc, 0),
+        u: this._t("k_of_running", { n: fmtNum(g.total, loc, 0) }),
+        icon,
+        c: stopped ? "var(--px-warn)" : "var(--px-ok)",
+        p: (g.running / g.total) * 100,
+        s: stopped ? this._t("k_stopped", { n: stopped }) : "",
+        entity,
+      };
+    };
+    const pve = pending.map((u) => u.pve).find(Boolean);
+    return kpiGrid([
+      guests("qemu", "vms", ICONS.vm, this._t("vms"), env.cluster?.entities.cluster_qemu_running),
+      guests("lxc", "lxcs", ICONS.lxc, this._t("lxcs"), env.cluster?.entities.cluster_lxc_running),
+      stores.length && {
+        key: "storage",
+        k: this._t("storage"),
+        v: fmtNum(stores.length - problems, loc, 0),
+        u: this._t("k_of_ok", { n: fmtNum(stores.length, loc, 0) }),
+        icon: ICONS.storage,
+        c: problems ? "var(--px-crit)" : "var(--info-color, #039be5)",
+        st: problems ? "bad" : "",
+        p: ((stores.length - problems) / stores.length) * 100,
+        s: problems ? this._t("k_problems", { n: problems }) : "",
+      },
+      updates.length && {
+        key: "updates",
+        k: this._t("updates"),
+        v: fmtNum(pending.length, loc, 0),
+        u: this._t("k_of_nodes", { n: fmtNum(updates.length, loc, 0) }),
+        icon: ICONS.update,
+        c: pending.length ? "var(--px-accent)" : "var(--px-ok)",
+        st: pending.length ? "warn" : "",
+        s: pending.length ? (pve ? this._t("k_pve_available", { v: pve }) : this._t("k_updates_pending")) : this._t("k_up_to_date"),
+        entity: updates.length === 1 ? updates[0].id : pending.length === 1 ? pending[0].id : "",
+      },
+    ]);
   }
 
   _controls(g, state) {

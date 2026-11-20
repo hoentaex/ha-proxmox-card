@@ -116,3 +116,20 @@ test("the rack draws one server per node, up to three, the last one counting the
 test("illustration labels exist in every language", () => {
   for (const lang of Object.keys(STRINGS)) for (const k of ["illustration", "illustration_theme", "theme_auto", "theme_day", "theme_night"]) assert.ok(STRINGS[lang][k], `${lang}.${k}`);
 });
+
+test("KPI tiles: rows are always full, tiles without a value are left out", () => {
+  const { fillRows, kpiGrid } = load(["fillRows", "kpiGrid"]);
+  assert.deepEqual([...fillRows([1, 1, 1, 1], 2)], [1, 1, 1, 1]);
+  assert.deepEqual([...fillRows([1, 1, 1], 2)], [1, 1, 2]);
+  assert.deepEqual([...fillRows([1, 2, 1], 2)], [2, 2, 2]);
+  const html = kpiGrid([
+    { key: "a", k: "VMs", v: "2", icon: "M0,0", c: "red" },
+    { key: "b", k: "LXC", v: null, icon: "M0,0", c: "red" },
+    { key: "c", k: "Speicher", v: "7", icon: "M0,0", c: "red", entity: "sensor.x" },
+    { key: "d", k: "Updates", v: "1", icon: "M0,0", c: "red" },
+  ]);
+  assert.equal((html.match(/class="kpi[ "]/g) || []).length, 3);
+  assert.match(html, /data-key="d"[^>]*grid-column:span 2/);
+  assert.match(html, /data-entity="sensor.x"/);
+  assert.equal(kpiGrid([null, false]), "");
+});

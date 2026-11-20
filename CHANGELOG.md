@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 (2026-11-20)
+
+- **KPI tiles** (as in the energy, oil, heating and Tibber cards) right under the header: VMs and LXC containers
+  running with a bar and how many are stopped (amber), storages fine (red with the number of problems), nodes with
+  updates with the new Proxmox VE version (amber). A tile without data is left out and the rows close up; the VM and
+  LXC tiles open the cluster sensors.
+- **Compact nodes:** name line with the badges, three small rings (CPU, RAM, disk) with only their name under them,
+  and one detail line with the guests, cores, memory used / total, load, IO delay and uptime. The rings' last 24 hours
+  stay in their tooltip.
+
 ## 0.2.0 (2026-11-18)
 
 - **Illustrated header** on the full and mini cards, in the style of juju35's cards: 90 px banner with the title and the status pill on a technical room wall, the nodes drawn in a small rack at the right (state LED, activity LED, CPU and memory bars per node, up to three nodes) and a 10 px ground strip in the state colour: green all online, amber when a node has pending updates or failed tasks, red when a node is offline.
