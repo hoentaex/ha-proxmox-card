@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 (2026-11-22)
+
+- **Arc tiles instead of rings** in the node panels, as the compact gauge tile of
+  [Cards Kit](https://github.com/hoentaex/ha-cards-kit): a small open arc (270°, open at the bottom) with the icon in a
+  tinted circle, the name and the value beside it, one tile per metric.
+- Colour per metric (CPU indigo, RAM purple, disk blue); from the thresholds the arc, value, border and tile turn
+  orange or red. On narrow cards (under 340 px) the three tiles stack. A click still opens the sensor, the tooltip
+  still shows the last 24 hours.
+
 ## 0.3.0 (2026-11-20)
 
 - **KPI tiles** (as in the energy, oil, heating and Tibber cards) right under the header: VMs and LXC containers

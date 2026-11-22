@@ -784,14 +784,23 @@ function spark(points, end, max) {
   return `<svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><path class="spark-a" d="${area}"/><path class="spark-l" d="${line}"/></svg>`;
 }
 
-const ring = (pct) => {
-  const r = 26;
-  const c = 2 * Math.PI * r;
+/**
+ * Open arc gauge (270°, gap at the bottom) as in the gauge tile of ha-cards-kit: grey track, the share in the tile
+ * colour. Drawn as stroke dashes on a circle turned so the arc starts bottom left.
+ */
+const arc = (pct, size = 36, width = 3) => {
+  const c = size / 2;
+  const r = (size - width) / 2 - 0.5;
+  const C = 2 * Math.PI * r;
+  const L = 0.75 * C;
   const p = pct === null ? 0 : Math.max(0, Math.min(100, pct));
-  return `<svg class="ring" viewBox="0 0 64 64">
-    <circle cx="32" cy="32" r="${r}" class="track"/>
-    <circle cx="32" cy="32" r="${r}" class="value" stroke-dasharray="${((p / 100) * c).toFixed(1)} ${c.toFixed(1)}"/>
-  </svg>`;
+  const rot = `rotate(135 ${c} ${c})`;
+  return `<svg class="arcsvg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">
+    <circle class="track" cx="${c}" cy="${c}" r="${r}" stroke-width="${width}" stroke-dasharray="${L.toFixed(2)} ${C.toFixed(2)}" transform="${rot}"/>${
+      p > 0
+        ? `<circle class="value" cx="${c}" cy="${c}" r="${r}" stroke-width="${width}" stroke-dasharray="${((L * p) / 100).toFixed(2)} ${C.toFixed(2)}" transform="${rot}"/>`
+        : ""
+    }</svg>`;
 };
 
 // ---------------------------------------------------------------------------
@@ -1386,7 +1395,8 @@ const FULL_STYLE = `
   .section-title .chevron { transition: transform .2s ease; }
   .section-title.closed { margin-bottom: 0; }
   .section-title.closed .chevron { transform: rotate(-90deg); }
-  /* A node: its name line, then its CPU, RAM and disk rings. */
+  /* A node: its name line, then CPU, RAM and disk as compact arc tiles (small arc with the icon left, name and value
+     beside it), as the compact gauge tile of ha-cards-kit. Colour per metric, orange/red from the thresholds. */
   .nodes { display: flex; flex-direction: column; gap: 8px; }
   .node { border-radius: 12px; padding: 10px 12px; background: var(--secondary-background-color, rgba(127,127,127,.06)); min-width: 0;
           display: flex; flex-direction: column; gap: 8px; }
@@ -1395,25 +1405,30 @@ const FULL_STYLE = `
   .node-head .nname { flex: 1 1 auto; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .node-head .tags { display: flex; gap: 4px; margin-left: auto; min-width: 0; flex-wrap: nowrap; overflow: hidden; }
   .node .detail { font-size: 12px; color: var(--secondary-text-color); line-height: 1.4; }
-  .gauges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-  .gauge { display: flex; flex-direction: column; align-items: center; min-width: 0; position: relative; border-radius: 10px; overflow: hidden; }
-  .gauge > :not(.spark) { position: relative; }
-  .gauge .spark { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-  .gauge .gw { position: relative; width: min(46px, 100%); aspect-ratio: 1; }
-  .node .gauge { gap: 4px; }
-  .node .gauge .lbl { font-size: 12px; }
-  .ring { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
-  .ring circle { fill: none; stroke-width: 6; }
-  .ring .track { stroke: var(--divider-color, rgba(127,127,127,.25)); }
-  .ring .value { stroke: var(--c, var(--px-accent)); stroke-linecap: round; transition: stroke-dasharray .6s ease; }
-  .gauge .val { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .gauge .val b { font-size: 12px; font-weight: 500; }
-  .gauge .val .icon { display: none; }
-  .gauge .lbl { font-size: 12px; color: var(--secondary-text-color); text-align: center; line-height: 1.35; max-width: 100%; overflow-wrap: break-word; }
-  .gauge .lbl small { display: block; font-size: 11px; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  @container (max-width: 299px) {
-    .gauge .val .icon { display: none; }
-    .gauge .val b { font-size: 11px; }
+  .arcs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .arct { --mc: var(--px-accent); --c: var(--mc); display: flex; align-items: center; gap: 8px; min-width: 0; padding: 7px 9px; border-radius: 10px;
+          background: var(--ha-card-background, var(--card-background-color, #fff)); }
+  .arct.cpu { --mc: var(--indigo-color, #5c6bc0); } .arct.ram { --mc: var(--purple-color, #8e44ad); } .arct.disk { --mc: var(--blue-color, #039be5); }
+  .arct.ok, .arct.idle { --c: var(--mc); } .arct.warn { --c: var(--px-warn); } .arct.crit { --c: var(--px-crit); }
+  .arct.warn, .arct.crit { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent);
+                           background: color-mix(in srgb, var(--c) 8%, var(--ha-card-background, var(--card-background-color, #fff))); }
+  .arct.clickable:hover { filter: brightness(1.04); }
+  .arct .arc { position: relative; flex: none; width: 36px; height: 36px; display: grid; place-items: center; }
+  .arct .arcsvg { position: absolute; inset: 0; }
+  .arcsvg circle { fill: none; stroke-linecap: round; }
+  .arcsvg .track { stroke: color-mix(in srgb, var(--secondary-text-color) 22%, transparent); }
+  .arcsvg .value { stroke: var(--c); transition: stroke-dasharray .6s ease; }
+  .arct .gi { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+              color: color-mix(in srgb, var(--c) 85%, var(--primary-text-color)); background: color-mix(in srgb, var(--c) 18%, var(--ha-card-background, var(--card-background-color, #fff))); }
+  .arct .gi .icon { width: 12px; height: 12px; }
+  .arct .t { display: flex; flex-direction: column; min-width: 0; }
+  .arct .gk { font-size: 11.5px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .arct .gv { font-size: 16px; font-weight: 500; line-height: 1.2; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .arct .gv small { font-size: 11px; font-weight: 400; color: var(--secondary-text-color); margin-left: 2px; }
+  .arct.warn .gv, .arct.crit .gv { color: color-mix(in srgb, var(--c) 70%, var(--primary-text-color)); }
+  .arct.idle .arc, .arct.idle .gv { opacity: .6; }
+  @container (max-width: 339px) {
+    .arcs { grid-template-columns: minmax(0, 1fr); }
   }
   .counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); gap: 10px; }
   .count-tile { display: flex; flex-direction: column; align-items: center; padding: 10px 6px; border-radius: 10px;
@@ -1541,12 +1556,14 @@ class ProxmoxCard extends ProxmoxBase {
     return ids;
   }
 
-  _gauge(id, label, icon, pct, cls, hist, withSpark = true) {
+  /** One metric of a node as a compact arc tile: small arc with the icon, name and value beside it. */
+  _arcTile(id, label, icon, pct, cls, metric, hist) {
     const range = rangeText(hist, this._loc());
-    const display = pct === null ? "—" : `${Math.round(pct)}%`;
-    return `<div class="gauge clickable ${cls}" role="button" tabindex="0" data-entity="${esc(id || "")}"${range ? ` title="${esc(label.replace(/<[^>]+>/g, " ") + range)}"` : ""}>${withSpark ? spark(hist, this._histEnd, 100) : ""}
-      <div class="gw">${ring(pct)}<div class="val">${svgIcon(icon)}<b>${display}</b></div></div>
-      <div class="lbl">${label}</div>
+    const value = pct === null ? "—" : `${fmtNum(Math.round(pct), this._loc(), 0)}<small>%</small>`;
+    const state = pct === null ? "idle" : cls;
+    return `<div class="arct clickable ${metric} ${state}" role="button" tabindex="0" data-entity="${esc(id || "")}"${range ? ` title="${esc(label + range)}"` : ""}>
+      <span class="arc">${arc(pct)}<span class="gi">${svgIcon(icon)}</span></span>
+      <span class="t"><span class="gk">${esc(label)}</span><span class="gv">${value}</span></span>
     </div>`;
   }
 
@@ -1585,7 +1602,7 @@ class ProxmoxCard extends ProxmoxBase {
           ? `<span class="tag upd clickable" role="button" tabindex="0" data-entity="${esc(upd.id)}" title="${esc(this._updTitle(upd))}" aria-label="${esc(this._updTitle(upd))}">${svgIcon(ICONS.update)}${esc(upd.pve ? `PVE ${upd.pve}` : this._t("updates"))}</span>`
           : "",
       ].join("");
-      // As in the KPI mockup: plain rings with their name under them; cores and memory go into the detail line.
+      // Cores and memory used go into the detail line under the arc tiles.
       if (u.cores) detail.splice(2, 0, `${fmtNum(u.cores, loc, 0)} ${this._tn("cores", u.cores)}`);
       if (u.used !== null && u.total) detail.splice(u.cores ? 3 : 2, 0, `${this._t("memory")} ${fmtBytesPair(u.used, u.total, loc)}`);
       return `<div class="node" data-key="${esc(n.id)}">
@@ -1594,10 +1611,10 @@ class ProxmoxCard extends ProxmoxBase {
           <span class="nname clickable" role="button" tabindex="0" data-entity="${esc(st.id || "")}" title="${esc(this._stateLabel(st.state))}">${esc(n.name)}</span>
           <span class="tags">${tags}</span>
         </div>
-        <div class="gauges">
-          ${this._gauge(u.cpuId, this._t("cpu"), ICONS.cpu, u.cpu, this._level("cpu", u.cpu), hist?.[u.cpuId], false)}
-          ${this._gauge(u.memId, this._t("memory"), ICONS.ram, u.mem, this._level("ram", u.mem), hist?.[e.memory_used_perc], false)}
-          ${this._gauge(u.diskId, this._t("disk"), ICONS.disk, u.disk, this._level("disk", u.disk), null, false)}
+        <div class="arcs">
+          ${this._arcTile(u.cpuId, this._t("cpu"), ICONS.cpu, u.cpu, this._level("cpu", u.cpu), "cpu", hist?.[u.cpuId])}
+          ${this._arcTile(u.memId, this._t("memory"), ICONS.ram, u.mem, this._level("ram", u.mem), "ram", hist?.[e.memory_used_perc])}
+          ${this._arcTile(u.diskId, this._t("disk"), ICONS.disk, u.disk, this._level("disk", u.disk), "disk", null)}
         </div>
         <div class="detail">${esc(detail.join(" · "))}</div>
       </div>`;

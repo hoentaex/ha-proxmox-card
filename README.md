@@ -24,7 +24,7 @@ Its design and structure come from [ha-docker-card](https://github.com/juju35/ha
 - Two cards: a full **Proxmox Card** and a compact **Proxmox Mini Card**
 - Header with the Proxmox VE version and how many nodes are online
 - KPI tiles at the top: VMs and LXC containers running (with how many are stopped), storages fine, nodes with updates (with the new Proxmox VE version); a tile without data is left out and the rows close up
-- One compact panel per node: CPU, RAM and root disk rings (their last 24 hours in the tooltip), then running VMs and containers, cores, memory used / total, load, IO delay, uptime in one line
+- One compact panel per node: CPU, RAM and root disk as small arc tiles (arc with the icon, name and value; orange / red from the thresholds; their last 24 hours in the tooltip), then running VMs and containers, cores, memory used / total, load, IO delay, uptime in one line
 - Node badges: updates pending, with the new Proxmox VE version when there is one (opens the node's update entity), backup running, failed tasks
 - VMs and LXC containers list, grouped by node: state, CPU, RAM, IP address, uptime, locked and health flags, search and sort (name, ID, CPU, RAM), each guest's CPU over 24 h behind its row
 - Start, shutdown and reboot buttons, with an in-card confirmation; an optional hard stop button
