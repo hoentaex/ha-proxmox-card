@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 (2026-11-27)
+
+- **Fix:** the cards stayed empty since the Proxmox VE integration registers its entities and devices under the
+  `proxmoxve_custom` domain instead of `proxmoxve`. Both domains are now recognised, so older releases of the
+  integration keep working.
+
 ## 0.4.0 (2026-11-22)
 
 - **Arc tiles instead of rings** in the node panels, as the compact gauge tile of

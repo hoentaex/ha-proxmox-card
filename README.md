@@ -154,7 +154,7 @@ illustration_theme: night   # optional, default follows the theme
 
 ## How the entities are found
 
-The card reads `hass.entities` and `hass.devices`: entities of the `proxmoxve` platform, keyed by their translation key, on devices recognised by their identifier (`<entry>_NODE_<name>`, `_QEMU_<vmid>`, `_LXC_<vmid>`, `_STORAGE_…`, `_ZFS_…`, `_DISK_…`, `_cluster`), else by their model and name. A guest's node is read from its *Node* sensor, so it follows a migration.
+The card reads `hass.entities` and `hass.devices`: entities of the `proxmoxve_custom` platform (`proxmoxve` with releases of the integration that still override the core one), keyed by their translation key, on devices recognised by their identifier (`<entry>_NODE_<name>`, `_QEMU_<vmid>`, `_LXC_<vmid>`, `_STORAGE_…`, `_ZFS_…`, `_DISK_…`, `_cluster`), else by their model and name. A guest's node is read from its *Node* sensor, so it follows a migration.
 
 ## Development
 

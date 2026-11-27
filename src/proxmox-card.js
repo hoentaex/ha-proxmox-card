@@ -13,7 +13,8 @@
  */
 
 const VERSION = "__VERSION__";
-const PLATFORM = "proxmoxve";
+// The integration's domain: "proxmoxve_custom" since it no longer overrides the core integration, "proxmoxve" before.
+const PLATFORMS = new Set(["proxmoxve_custom", "proxmoxve"]);
 const SITE = "https://www.proxmox.com";
 
 const ICONS = {
@@ -458,7 +459,7 @@ const entityKey = (e) => {
 const KINDS = { cluster: "cluster", NODE: "node", QEMU: "qemu", LXC: "lxc", STORAGE: "storage", DISK: "disk", ZFS: "zfs" };
 const deviceKind = (d) => {
   for (const [domain, ident] of d.identifiers || []) {
-    if (domain !== PLATFORM || typeof ident !== "string") continue;
+    if (!PLATFORMS.has(domain) || typeof ident !== "string") continue;
     const m = /^[^_]+_(cluster|NODE|QEMU|LXC|STORAGE|DISK|ZFS)(?:_(.*))?$/.exec(ident);
     if (m) return { kind: KINDS[m[1]], ref: m[2] ?? "" };
   }
@@ -496,7 +497,7 @@ const resolve = (hass) => {
 
   const byDevice = new Map();
   for (const e of Object.values(hass.entities)) {
-    if (e.platform !== PLATFORM || !e.device_id) continue;
+    if (!PLATFORMS.has(e.platform) || !e.device_id) continue;
     const key = entityKey(e);
     if (!key) continue;
     const ents = byDevice.get(e.device_id) || {};

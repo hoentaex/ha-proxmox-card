@@ -14,14 +14,14 @@ const device = (id, name, model, kind, ref, via = null) => {
     via_device_id: via,
     config_entries: [ENTRY],
     configuration_url: `https://10.0.0.150:8006/#v1:0:=${kind.toLowerCase()}/${ref}`,
-    identifiers: [["proxmoxve", kind === "cluster" ? `${ENTRY}_cluster` : `${ENTRY}_${kind}_${ref}`]],
+    identifiers: [["proxmoxve_custom", kind === "cluster" ? `${ENTRY}_cluster` : `${ENTRY}_${kind}_${ref}`]],
   };
 };
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 const add = (dev, domain, key, state, attrs = {}) => {
   const id = `${domain}.${slug(devices[dev].name)}_${key}`;
-  entities[id] = { entity_id: id, device_id: dev, platform: "proxmoxve", translation_key: key };
+  entities[id] = { entity_id: id, device_id: dev, platform: "proxmoxve_custom", translation_key: key };
   states[id] = { entity_id: id, state: String(state), attributes: { friendly_name: `${devices[dev].name} ${key}`, ...attrs } };
 };
 const GB = { unit_of_measurement: "GB" };

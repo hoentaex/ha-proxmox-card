@@ -42,8 +42,25 @@ test("entities are keyed by translation key, prefixed with their domain unless s
   assert.equal(docker.entities["button.reboot"], "button.lxc_docker_105_reboot");
 });
 
+test("both integration domains are read: proxmoxve_custom (current) and proxmoxve (older releases)", () => {
+  const as = (platform) => ({
+    ...hass,
+    entities: Object.fromEntries(Object.entries(hass.entities).map(([k, e]) => [k, { ...e, platform }])),
+    devices: Object.fromEntries(
+      Object.entries(hass.devices).map(([k, d]) => [k, { ...d, identifiers: d.identifiers.map(([, i]) => [platform, i]) }])
+    ),
+  });
+  for (const platform of ["proxmoxve_custom", "proxmoxve"]) {
+    const env = resolve(as(platform)).envs[0];
+    assert.ok(env, platform);
+    assert.equal(env.nodes.length, 2, platform);
+    assert.equal(env.guests.length, 8, platform);
+  }
+  assert.equal(resolve(as("other")).envs.length, 0);
+});
+
 test("device kinds from identifiers, else from model and name", () => {
-  same(deviceKind({ identifiers: [["proxmoxve", "01ABC_NODE_pve"]] }), { kind: "node", ref: "pve" });
+  same(deviceKind({ identifiers: [["proxmoxve_custom", "01ABC_NODE_pve"]] }), { kind: "node", ref: "pve" });
   same(deviceKind({ identifiers: [["proxmoxve", "01ABC_QEMU_108"]] }), { kind: "qemu", ref: "108" });
   same(deviceKind({ identifiers: [["proxmoxve", "01ABC_cluster"]] }), { kind: "cluster", ref: "" });
   same(deviceKind({ name: "LXC docker (105)", model: "LXC" }), { kind: "lxc", ref: "105" });
